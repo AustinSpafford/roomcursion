@@ -37,10 +37,16 @@ public class GameplayManager : MonoBehaviour
 
 	public void Awake()
 	{
+		activeRoomLayerIndex = LayerMask.NameToLayer("Active Room");
+		nextRoomLayerIndex = LayerMask.NameToLayer("Next Room");
+		previousRoomLayerIndex = LayerMask.NameToLayer("Previous Room");
+
 		player = Component.FindObjectsOfType<PlayerGravity>().Single();
 
 		ActiveRoom = Component.FindObjectsOfType<Room>().Single();
 		allRooms.Add(ActiveRoom);
+
+		ApplyRoomRestrictedLighting(ActiveRoom.transform, activeRoomLayerIndex);
 	}
 
 	public void CreateRoomForPortal(
@@ -51,6 +57,8 @@ public class GameplayManager : MonoBehaviour
 		Room newRoom = newRoomObject.GetComponent<Room>();
 
 		allRooms.Add(newRoom);		
+		
+		ApplyRoomRestrictedLighting(newRoom.transform, nextRoomLayerIndex);
 
 		newRoom.CreatedByPortal = originPortal;
 		
@@ -106,8 +114,12 @@ public class GameplayManager : MonoBehaviour
 		PortalTile originPortal)
 	{
 		Room destinationRoom = allRooms.Where(elem => (elem.CreatedByPortal == originPortal)).Single();
+		
+		ApplyRoomRestrictedLighting(ActiveRoom.transform, previousRoomLayerIndex);
 
 		ActiveRoom = destinationRoom;
+		
+		ApplyRoomRestrictedLighting(ActiveRoom.transform, activeRoomLayerIndex);
 
 		// Forget the creater, since it's no longer needed, and it'll be destroyed once the portal closes.
 		ActiveRoom.CreatedByPortal = null; 
@@ -122,7 +134,39 @@ public class GameplayManager : MonoBehaviour
 
 	private static GameplayManager instance = null;
 
+	private int activeRoomLayerIndex = -1;
+	private int nextRoomLayerIndex = -1;
+	private int previousRoomLayerIndex = -1;
+
 	private List<Room> allRooms = new List<Room>();
 
 	private PlayerGravity player = null;
+
+	private static void ApplyRoomRestrictedLighting(
+		Transform root,
+		int layerIndex)
+	{
+		SetLayerRecursive(root, layerIndex);
+
+		foreach (Light light in root.GetComponentsInChildren<Light>())
+		{
+			light.cullingMask = (1 << layerIndex);
+		}
+	}
+
+	private static void SetLayerRecursive(
+		Transform root,
+		int layerIndex)
+	{
+		root.gameObject.layer = layerIndex;
+
+		int childCount = root.transform.childCount;
+
+		for (int childIndex = 0;
+			childIndex < childCount;
+			++childIndex)
+		{
+			SetLayerRecursive(root.transform.GetChild(childIndex), layerIndex);
+		}
+	}
 }
