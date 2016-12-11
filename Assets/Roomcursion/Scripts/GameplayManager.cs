@@ -70,33 +70,37 @@ public class GameplayManager : MonoBehaviour
 
 		// Transform the new room so the portals align.
 		{
-			// Work in terms of room-coordinates.				
-			newRoom.transform.position = Vector3.zero;
-
-			Quaternion desiredNewRoomRotation = (
-				Quaternion.AngleAxis(180.0f, Vector3.right) *
-				ActiveRoom.transform.rotation *
-				Quaternion.Inverse(destinationPortal.transform.rotation));			
+			// For simplicity, work in terms of the new room's coordinates.				
+			newRoom.transform.position = Vector3.zero;			
 
 			// Perform the initial portal-alignment rotation.
-			newRoom.transform.rotation = (newRoom.transform.rotation * desiredNewRoomRotation);
+			newRoom.transform.rotation = (
+				Quaternion.AngleAxis(180.0f, Vector3.right) *
+				newRoom.transform.rotation *
+				Quaternion.Inverse(destinationPortal.transform.rotation));		
 
 			// Rotate the new room so the room-centers are vertically aligned.
 			{
 				Vector3 projectedOriginPortalToRoomCenter = 
 					Vector3.ProjectOnPlane(
-						(originPortal.transform.position - originPortal.ParentRoom.transform.position),
+						(originPortal.ParentRoom.transform.position - originPortal.transform.position),
 						Vector3.up);
 
 				Vector3 projectedDestinationPortalToRoomCenter = 
 					Vector3.ProjectOnPlane(
-						(destinationPortal.transform.position - destinationPortal.ParentRoom.transform.position),
+						(destinationPortal.ParentRoom.transform.position - destinationPortal.transform.position),
 						Vector3.up);
 
 				float correctionAngle = 
 					Vector3.Angle(
 						projectedDestinationPortalToRoomCenter,
 						projectedOriginPortalToRoomCenter);
+
+				// If the correction is actually a negative rotation (Vector3.Angle only returns the ACos).
+				if (Vector3.Cross(projectedDestinationPortalToRoomCenter, projectedOriginPortalToRoomCenter).y < 0)
+				{
+					correctionAngle *= -1;
+				}
 
 				Quaternion roomCenterAlignmentRotation =
 					Quaternion.AngleAxis(correctionAngle, Vector3.up);
