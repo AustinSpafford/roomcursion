@@ -20,7 +20,7 @@ GameObject:
   m_Component:
   - 4: {fileID: 4000013421811604}
   m_Layer: 0
-  m_Name: blank_tile_model
+  m_Name: blank_tile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
